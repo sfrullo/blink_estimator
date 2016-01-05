@@ -1,4 +1,4 @@
-function classifier = train_svm_im_vect(datasetpath, partition_ratio, verboseflag)
+function classifier = train_svm_im_vect(datasetpath, partition_ratio)
 % Import image dataset
 lset = imageSet(datasetpath, 'Recursive');
 

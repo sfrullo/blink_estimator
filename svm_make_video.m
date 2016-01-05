@@ -1,6 +1,4 @@
-clear all;
-close all;
-
+function blink_classifier_make_video(input_f, output_f, class_mat)
 %% Import needed paths
 addpath('utils/');
 addpath('movies/')
@@ -8,19 +6,19 @@ addpath('classifier_blink_detector/');
 addpath('eye_region_extractor/');
 
 %% Load ground Truth value
-load('blink_ground_truth.mat');
+%load('blink_ground_truth.mat');
 
 %% Load Pre-trained classifiers Model
-load('bof_svm_classifier');
+load(class_mat);
 
 %% Load files paths
 points_mat_path = 'eye_region_extractor/mat_data_face_p99/';
 
-movies_root_path = 'movies_fix/';
+movies_root_path = input_f %'movies_fix/';
 movies_path = dir([movies_root_path '*.avi']);
 movies_path = sort_nat({movies_path.name});
 
-output_movies_path = 'blinks_svm_movie/';
+output_movies_path = output_f %'blinks_svm_movie/';
 if ~exist(output_movies_path, 'file')
     mkdir(output_movies_path);
 end

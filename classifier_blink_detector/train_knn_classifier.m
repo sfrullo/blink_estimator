@@ -1,6 +1,6 @@
-function classifier = training_knn_classifier(datasetpath, partition_ratio, verboseflag)
+function classifier = training_knn_classifier(datasetpath, partition_ratio)
 % Import image dataset
-lset = imaglset eSet(datasetpath, 'Recursive');
+lset = imageSet(datasetpath, 'Recursive');
 
 % Prepare Training and Validation set
 % select an equal number of image from each category

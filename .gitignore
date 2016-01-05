@@ -1,0 +1,16 @@
+blinks_svm_movies*/
+dataset/
+eye_region_extractor/dataset
+eye_region_extractor/eyes_image
+eye_region_extractor/mat_data_face_p99
+eye_region_extractor/movies
+eye_region_extractor/tracked_movie_face_p99
+eye_region_extractor/landmark_estimator/images/
+eye_region_extractor/landmark_estimator/img_dump/
+eyes_dataset/
+eyes_dataset_small/
+movies/
+*.mat
+*.zip
+*.tar.gz
+*.m~

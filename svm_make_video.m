@@ -6,7 +6,7 @@ addpath('classifier_blink_detector/');
 addpath('eye_region_extractor/');
 
 %% Load ground Truth value
-%load('blink_ground_truth.mat');
+load('blink_ground_truth.mat');
 
 %% Load Pre-trained classifiers Model
 load(class_mat);

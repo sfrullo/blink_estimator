@@ -33,7 +33,7 @@ max_pw = floor(max_ms * fps / 1000);
 if showpeaks
     figure();
     plot(cc);
-    simple_t = title('');
+    simple_t = title('Simple');
     hold on;
     simple_m_p = plot(0, 0, 'r*');
     simple_lt_p = plot(zeros(1, length(cc)), 'b-');
@@ -59,7 +59,7 @@ for i=1:size(thresh_comb,1)
     blink_dur(i,1:length(dur)) = dur;
     
     if showpeaks
-        simple_t.String = ['TL:' num2str(tr(1)) ' TR:' num2str(tr(2))];
+        simple_t.String = ['Simple -> TL:' num2str(tr(1)) ' TR:' num2str(tr(2))];
         simple_m_p.XData = simple_blink;
         simple_m_p.YData = cc(simple_blink);
         simple_lt_p.YData = tr(1) * ones(1,length(cc));

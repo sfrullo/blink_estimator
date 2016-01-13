@@ -37,23 +37,7 @@ for i=1:length(s)
     l = struct;
     l.blink_count = data.l_blink_count';
     l.TP = zeros(1,length(data.thresh_comb));
-    l.FP = zeros(1,length(data.thresh_comb));% fix nan values
-l_accuracy(isnan(l_accuracy)) = 0;
-l_precision(isnan(l_precision)) = 0;
-l_recall(isnan(l_recall)) = 0;
-
-r_accuracy(isnan(r_accuracy)) = 0;
-r_precision(isnan(r_precision)) = 0;
-r_recall(isnan(r_recall)) = 0;
-
-% compute mean values
-l_accuracy_mean = mean(l_accuracy, 1);
-l_precision_mean = mean(l_precision,1);
-l_recall_mean = mean(l_recall,1);
-
-r_accuracy_mean = mean(r_accuracy, 1);
-r_precision_mean = mean(r_precision,1);
-r_recall_mean = mean(r_recall,1);
+    l.FP = zeros(1,length(data.thresh_comb));
     l.FN = zeros(1,length(data.thresh_comb));
     l.err = zeros(1,length(data.thresh_comb));
     l.accuracy = zeros(1,length(data.thresh_comb));
@@ -141,9 +125,19 @@ r_recall_mean = mean(r_recall,1);
     r.precision = l.TP ./ (l.TP + l.FP);
     r.recall = l.TP ./ (l.TP + l.FN);
     
-    % Save results for each subjects
+    % fix nan values
+    l.accuracy(isnan(l.accuracy)) = 0;
+    l.precision(isnan(l.precision)) = 0;
+    l.recall(isnan(l.recall)) = 0;
+
+    r.accuracy(isnan(r.accuracy)) = 0;
+    r.precision(isnan(r.precision)) = 0;
+    r.recall(isnan(r.recall)) = 0;
+    
+    % Save results for each subject
     save(['results/' s{i}], 'l', 'r');
     
+    % add values to global algorithm performance variable
     l_err(i,:) = l.err;
     l_accuracy(i,:) = l.accuracy;
     l_precision(i,:) = l.precision;
@@ -156,15 +150,6 @@ r_recall_mean = mean(r_recall,1);
     
 end
 
-% fix nan values
-l_accuracy(isnan(l_accuracy)) = 0;
-l_precision(isnan(l_precision)) = 0;
-l_recall(isnan(l_recall)) = 0;
-
-r_accuracy(isnan(r_accuracy)) = 0;
-r_precision(isnan(r_precision)) = 0;
-r_recall(isnan(r_recall)) = 0;
-
 % compute mean values
 l_accuracy_mean = mean(l_accuracy, 1);
 l_precision_mean = mean(l_precision,1);
@@ -173,7 +158,6 @@ l_recall_mean = mean(l_recall,1);
 r_accuracy_mean = mean(r_accuracy, 1);
 r_precision_mean = mean(r_precision,1);
 r_recall_mean = mean(r_recall,1);
-
 
 % save global performance
 save(['results/' 'global.mat'], 'l_*', 'r_*');

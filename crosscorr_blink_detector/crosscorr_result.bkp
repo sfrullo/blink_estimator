@@ -1,0 +1,151 @@
+%%
+clear all;
+close all;
+
+%%
+addpath('../utils');
+
+%% Import groundtruth
+make_groundtruth;
+
+%% SIMPLE METHOD
+%Import data for each subject and compare result to ground_truth
+data_dir = 'mat_crosscorr_blink/';
+s = dir([data_dir '*.mat']);
+s = sort_nat({s.name});
+for i=1%:length(s)
+    
+    % Declare variable
+    l = struct;
+    l.blink_count = [];
+    l.TP = [];
+    l.FP = [];
+    l.FN = [];
+    l.rel_err = [];
+    l.abs_err = [];
+    
+    r = struct;
+    r.blink_count = [];
+    r.TP = [];
+    r.FP = [];
+    r.FN = [];
+    r.rel_err = [];
+    r.abs_err = [];
+    
+    n_sub = strsplit(s{i}, {'_s', '.'});
+    n_sub = char(n_sub(2));
+    fprintf('Import data for subject #%s\n', n_sub);
+    data = load([data_dir  s{i}]);
+    
+    % blink count
+    l.blink_count = data.l_simple_blink_count';
+    r.blink_count = data.r_simple_blink_count';
+    
+    % true positive = detected blinks which position are present in sub_gt.
+    for row=1:size(data.l_blink_pos)
+        
+        if any(data.l_blink_pos(row,:))
+        % fetch subject's ground truth
+        gt = bgt.(['s_' n_sub]);
+        
+        l.TP(row,:) = 
+        
+        end
+    end
+    
+    % false positive = detected blinks that are NOT present in left_pos
+    temp = data.l_simple_blink_pos;
+    temp(find(ismember(temp, left_pos))) = 0;
+    l.FP(i,:) = sum(~ismember(temp,0),2)';
+    temp = data.r_simple_blink_pos;
+    temp(find(ismember(temp, right_pos))) = 0;
+    r.FP(i,:) = sum(~ismember(temp,0),2)';
+    
+    % false negative
+    pos = left_pos(i,:);
+    temp = repmat(pos(~isnan(pos)), size(data.l_simple_blink_pos,1),1);
+    l.FN(i,:) = sum(~ismember(temp, data.l_simple_blink_pos), 2)';
+    pos = right_pos(i,:);
+    temp = repmat(pos(~isnan(pos)), size(data.r_simple_blink_pos,1),1);
+    r.FN(i,:) = sum(~ismember(temp, data.r_simple_blink_pos), 2)';
+    
+    l.abs_err(i,:) = abs(l.blink_count(i,:) - blink_gt(i));
+    r.abs_err(i,:) = abs(r.blink_count(i,:) - blink_gt(i));
+    
+    l.rel_err(i,:) = abs(l.blink_count(i,:) - blink_gt(i)) ./ blink_gt(i);
+    r.rel_err(i,:) = abs(r.blink_count(i,:) - blink_gt(i)) ./ blink_gt(i);
+    
+    
+    subjects.(['s_' n_sub]).l = l;
+    subjects.(['s_' n_sub]).r = r;
+    subjects.(['s_' n_sub]).blink_gt = bgt.(['s_' n_sub]);
+    
+end
+
+clear data_dir n_sub temp data s i
+
+%% DOUBLE THRESHOLD METHOD
+% Declare variable
+l = struct;
+l.blink_count = [];
+l.TP = [];
+l.FP = [];
+l.FN = [];
+l.rel_err = [];
+l.abs_err = [];
+
+r = struct;
+l.blink_count = [];
+r.TP = [];
+r.FP = [];
+r.FN = [];
+r.rel_err = [];
+r.abs_err = [];
+
+%Import data for each subject and compare result to ground_truth
+data_dir = 'mat_crosscorr_blink/';
+s = dir([data_dir '*.mat']);
+s = sort_nat({s.name});
+for i=1:length(s)
+    n_sub = strsplit(s{i}, {'_s', '.'});
+    n_sub = char(n_sub(2));
+    fprintf('Import data for subject #%s\n', n_sub);
+    data = load([data_dir  s{i}]);
+    
+    % blink count
+    l.blink_count(i,:) = data.l_blink_count';
+    r.blink_count(i,:) = data.r_blink_count';
+    
+    % true positive = detected blinks that are present in left_pos
+    l.TP(i,:) = sum(ismember(data.l_blink_pos, left_pos), 2)';
+    r.TP(i,:) = sum(ismember(data.r_blink_pos, right_pos), 2)';
+    
+    % false positive = detected blinks that are NOT present in left_pos
+    temp = data.l_blink_pos;
+    temp(find(ismember(temp, left_pos))) = 0;
+    l.FP(i,:) = sum(~ismember(temp,0),2)';
+    temp = data.r_blink_pos;
+    temp(find(ismember(temp, right_pos))) = 0;
+    r.FP(i,:) = sum(~ismember(temp,0),2)';
+    
+    % false negative
+    pos = left_pos(i,:);
+    temp = repmat(pos(~isnan(pos)), size(data.l_blink_pos,1),1);
+    l.FN(i,:) = sum(~ismember(temp, data.l_blink_pos), 2)';
+    pos = right_pos(i,:);
+    temp = repmat(pos(~isnan(pos)), size(data.r_blink_pos,1),1);
+    r.FN(i,:) = sum(~ismember(temp, data.r_blink_pos), 2)';
+    
+    l.abs_err(i,:) = abs(l.blink_count(i,:) - blink_gt(i));
+    r.abs_err(i,:) = abs(r.blink_count(i,:) - blink_gt(i));
+    
+    l.rel_err(i,:) = abs(l.blink_count(i,:) - blink_gt(i)) ./ blink_gt(i);
+    r.rel_err(i,:) = abs(r.blink_count(i,:) - blink_gt(i)) ./ blink_gt(i);
+end
+
+clear data_dir n_sub temp data s i
+
+%% Comptute and plot mean error
+figure();
+e = mean(l.rel_err, 1);
+plot(e);

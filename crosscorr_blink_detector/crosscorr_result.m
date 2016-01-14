@@ -6,133 +6,158 @@ close all;
 addpath('../utils');
 
 %% Import groundtruth
-load('../blink_ground_truth.mat');
-[left_pos, right_pos] = make_groundtruth('../training_set_separated/');
+make_groundtruth;
 
-
-%% SIMPLE METHOD 
-% Declare variable
-l_res = struct;
-l_res.blink_count = [];
-l_res.TP = [];
-l_res.FP = [];
-l_res.FN = [];
-l_res.rel_err = [];
-l_res.abs_err = [];
-
-r_res = struct;
-l_res.blink_count = [];
-r_res.TP = [];
-r_res.FP = [];
-r_res.FN = [];
-r_res.rel_err = [];
-r_res.abs_err = [];
-
+%% SIMPLE METHOD
 %Import data for each subject and compare result to ground_truth
 data_dir = 'mat_crosscorr_blink/';
 s = dir([data_dir '*.mat']);
 s = sort_nat({s.name});
+data = load([data_dir  s{1}]);
+
+% global algorithm performance variable
+l_err = zeros(length(s),length(data.thresh_comb));
+l_accuracy = zeros(length(s),length(data.thresh_comb));
+l_precision = zeros(length(s),length(data.thresh_comb));
+l_recall = zeros(length(s),length(data.thresh_comb));
+
+r_err = zeros(length(s),length(data.thresh_comb));
+r_accuracy = zeros(length(s),length(data.thresh_comb));
+r_precision = zeros(length(s),length(data.thresh_comb));
+r_recall = zeros(length(s),length(data.thresh_comb));
+
 for i=1:length(s)
+    
     n_sub = strsplit(s{i}, {'_s', '.'});
     n_sub = char(n_sub(2));
     fprintf('Import data for subject #%s\n', n_sub);
     data = load([data_dir  s{i}]);
     
-    % blink count
-    l_res.blink_count(i,:) = data.l_simple_blink_count';
-    r_res.blink_count(i,:) = data.r_simple_blink_count';
+    % Declare per subject performance variable
+    l = struct;
+    l.blink_count = data.l_blink_count';
+    l.TP = zeros(1,length(data.thresh_comb));
+    l.FP = zeros(1,length(data.thresh_comb));
+    l.FN = zeros(1,length(data.thresh_comb));
+    l.err = zeros(1,length(data.thresh_comb));
+    l.accuracy = zeros(1,length(data.thresh_comb));
+    l.precision = zeros(1,length(data.thresh_comb));
+    l.recall = zeros(1,length(data.thresh_comb));
     
-    % true positive = detected blinks that are present in left_pos
-    l_res.TP(i,:) = sum(ismember(data.l_simple_blink_pos, left_pos), 2)';
-    r_res.TP(i,:) = sum(ismember(data.r_simple_blink_pos, right_pos), 2)';
+    r = struct;
+    r.blink_count = data.r_blink_count';
+    r.TP = zeros(1,length(data.thresh_comb));
+    r.FP = zeros(1,length(data.thresh_comb));
+    r.FN = zeros(1,length(data.thresh_comb));
+    r.err = zeros(1,length(data.thresh_comb));
+    r.accuracy = zeros(1,length(data.thresh_comb));
+    r.precision = zeros(1,length(data.thresh_comb));
+    r.recall = zeros(1,length(data.thresh_comb));
     
-    % false positive = detected blinks that are NOT present in left_pos
-    temp = data.l_simple_blink_pos;
-    temp(find(ismember(temp, left_pos))) = 0;
-    l_res.FP(i,:) = sum(~ismember(temp,0),2)';
-    temp = data.r_simple_blink_pos;
-    temp(find(ismember(temp, right_pos))) = 0;
-    r_res.FP(i,:) = sum(~ismember(temp,0),2)';
+    % true positive = detected blinks which positions are present in sub_gt.
+    for row=1:size(data.thresh_comb,1)
+        
+        % LEFT
+        % if at least a blink is found
+        if any(data.l_blink_pos(row,:))
+            % fetch subject's ground truth
+            gt = bgt.(['s_' n_sub]);
+            pos = data.l_blink_pos(row,:);
+            pos = pos(pos > 0);
+            
+            % for each position
+            for p=1:length(pos)
+                % check if it is a valid value
+                indx = find(cellfun(@(x) ismember(pos(p),x), gt));
+                % if so..
+                if any(indx)
+                    % increase true positive counter
+                    l.TP(row) = l.TP(row) + 1;
+                    % remove related blink values from the gt list
+                    gt(indx) = [];
+                    
+                    % if pos is not a valid value or refers to a used blink ..
+                else
+                    % increase False Positive counter
+                    l.FP(row) = l.FP(row) + 1;
+                end
+            end
+        end
+        
+        % RIGHT
+        % if at least a blink is found
+        if any(data.l_blink_pos(row,:))
+            % fetch subject's ground truth
+            gt = bgt.(['s_' n_sub]);
+            pos = data.r_blink_pos(row,:);
+            pos = pos(pos > 0);
+            
+            % for each position
+            for p=1:length(pos)
+                % check if it is a valid value
+                indx = find(cellfun(@(x) ismember(pos(p),x), gt));
+                % if so..
+                if any(indx)
+                    % increase true positive counter
+                    r.TP(row) = r.TP(row) + 1;
+                    % remove related blink values from the gt list
+                    gt(indx) = [];
+                    
+                    % if pos is not a valid value or refers to a used blink ..
+                else
+                    % increase False Positive counter
+                    r.FP(row) = r.FP(row) + 1;
+                end
+            end
+        end
+    end
     
-    % false negative
-    pos = left_pos(i,:);
-    temp = repmat(pos(~isnan(pos)), size(data.l_simple_blink_pos,1),1);
-    l_res.FN(i,:) = sum(~ismember(temp, data.l_simple_blink_pos), 2)';
-    pos = right_pos(i,:);
-    temp = repmat(pos(~isnan(pos)), size(data.r_simple_blink_pos,1),1);
-    r_res.FN(i,:) = sum(~ismember(temp, data.r_simple_blink_pos), 2)';
+    % compute the remaining parameters
+    l.FN = length(bgt.(['s_' n_sub])) - l.TP;
+    l.err = abs(length(bgt.(['s_' n_sub])) - (l.TP + l.FP)) ./ length(bgt.(['s_' n_sub]));
+    l.accuracy = l.TP ./ (l.TP + l.FP + l.FN);
+    l.precision = l.TP ./ (l.TP + l.FP);
+    l.recall = l.TP ./ (l.TP + l.FN);
     
-    l_res.abs_err(i,:) = abs(l_res.blink_count(i,:) - blink_gt(i));
-    r_res.abs_err(i,:) = abs(r_res.blink_count(i,:) - blink_gt(i));
+    r.FN = length(bgt.(['s_' n_sub])) - r.TP;
+    r.err = abs(length(bgt.(['s_' n_sub])) - (r.TP + r.FP)) ./ length(bgt.(['s_' n_sub]));
+    r.accuracy = l.TP ./ (l.TP + l.FP + l.FN);
+    r.precision = l.TP ./ (l.TP + l.FP);
+    r.recall = l.TP ./ (l.TP + l.FN);
     
-    l_res.rel_err(i,:) = abs(l_res.blink_count(i,:) - blink_gt(i)) ./ blink_gt(i);
-    r_res.rel_err(i,:) = abs(r_res.blink_count(i,:) - blink_gt(i)) ./ blink_gt(i);
+    % fix nan values
+    l.accuracy(isnan(l.accuracy)) = 0;
+    l.precision(isnan(l.precision)) = 0;
+    l.recall(isnan(l.recall)) = 0;
+
+    r.accuracy(isnan(r.accuracy)) = 0;
+    r.precision(isnan(r.precision)) = 0;
+    r.recall(isnan(r.recall)) = 0;
+    
+    % Save results for each subject
+    save(['results/' s{i}], 'l', 'r');
+    
+    % add values to global algorithm performance variable
+    l_err(i,:) = l.err;
+    l_accuracy(i,:) = l.accuracy;
+    l_precision(i,:) = l.precision;
+    l_recall(i,:) = l.recall;
+    
+    r_err(i,:) = r.err;
+    r_accuracy(i,:) = r.accuracy;
+    r_precision(i,:) = r.precision;
+    r_recall(i,:) = r.recall;
+    
 end
 
-clear data_dir n_sub temp data s i
+% compute mean values
+l_accuracy_mean = mean(l_accuracy, 1);
+l_precision_mean = mean(l_precision,1);
+l_recall_mean = mean(l_recall,1);
 
-%% DOUBLE THRESHOLD METHOD
-% Declare variable
-l_res = struct;
-l_res.blink_count = [];
-l_res.TP = [];
-l_res.FP = [];
-l_res.FN = [];
-l_res.rel_err = [];
-l_res.abs_err = [];
+r_accuracy_mean = mean(r_accuracy, 1);
+r_precision_mean = mean(r_precision,1);
+r_recall_mean = mean(r_recall,1);
 
-r_res = struct;
-l_res.blink_count = [];
-r_res.TP = [];
-r_res.FP = [];
-r_res.FN = [];
-r_res.rel_err = [];
-r_res.abs_err = [];
-
-%Import data for each subject and compare result to ground_truth
-data_dir = 'mat_crosscorr_blink/';
-s = dir([data_dir '*.mat']);
-s = sort_nat({s.name});
-for i=1:length(s)
-    n_sub = strsplit(s{i}, {'_s', '.'});
-    n_sub = char(n_sub(2));
-    fprintf('Import data for subject #%s\n', n_sub);
-    data = load([data_dir  s{i}]);
-    
-    % blink count
-    l_res.blink_count(i,:) = data.l_blink_count';
-    r_res.blink_count(i,:) = data.r_blink_count';
-    
-    % true positive = detected blinks that are present in left_pos
-    l_res.TP(i,:) = sum(ismember(data.l_blink_pos, left_pos), 2)';
-    r_res.TP(i,:) = sum(ismember(data.r_blink_pos, right_pos), 2)';
-    
-    % false positive = detected blinks that are NOT present in left_pos
-    temp = data.l_blink_pos;
-    temp(find(ismember(temp, left_pos))) = 0;
-    l_res.FP(i,:) = sum(~ismember(temp,0),2)';
-    temp = data.r_blink_pos;
-    temp(find(ismember(temp, right_pos))) = 0;
-    r_res.FP(i,:) = sum(~ismember(temp,0),2)';
-    
-    % false negative
-    pos = left_pos(i,:);
-    temp = repmat(pos(~isnan(pos)), size(data.l_blink_pos,1),1);
-    l_res.FN(i,:) = sum(~ismember(temp, data.l_blink_pos), 2)';
-    pos = right_pos(i,:);
-    temp = repmat(pos(~isnan(pos)), size(data.r_blink_pos,1),1);
-    r_res.FN(i,:) = sum(~ismember(temp, data.r_blink_pos), 2)';
-    
-    l_res.abs_err(i,:) = abs(l_res.blink_count(i,:) - blink_gt(i));
-    r_res.abs_err(i,:) = abs(r_res.blink_count(i,:) - blink_gt(i));
-    
-    l_res.rel_err(i,:) = abs(l_res.blink_count(i,:) - blink_gt(i)) ./ blink_gt(i);
-    r_res.rel_err(i,:) = abs(r_res.blink_count(i,:) - blink_gt(i)) ./ blink_gt(i);
-end
-
-clear data_dir n_sub temp data s i
-
-%% Comptute and plot mean error
-figure();
-e = mean(l_res.rel_err, 1);
-plot(e);
+% save global performance
+save(['results/' 'global.mat'], 'l_*', 'r_*');

@@ -6,7 +6,7 @@ addpath('classifier_blink_detector/');
 addpath('eye_region_extractor/');
 
 %% Load ground Truth value
-%load('blink_ground_truth.mat');
+load('blink_ground_truth.mat');
 
 %% Load Pre-trained classifiers Model
 load(class_mat);
@@ -118,11 +118,13 @@ for m_id=1:length(movies_path)
         l_im = imcrop(frame,[medlx(i)*scale_factor-ab/2 medly(i)*scale_factor-cd/2 ab cd]);
         r_im = imcrop(frame,[medrx(i)*scale_factor-ab/2 medry(i)*scale_factor-cd/2 ab cd]);
         
+	% preprocessing eye image
+	l_im_lin = reshape( double(rgb2gray(l_im)), 1, []);
+        r_im_lin = reshape( double(rgb2gray(r_im)), 1, []);
+
         % classify eye images
-        [l_labelIdx, l_score] = predict(l_eye_classifier.categoryClassifier, l_im);
-        [r_labelIdx, r_score] = predict(r_eye_classifier.categoryClassifier, r_im);
-        l_label = l_eye_classifier.categoryClassifier.Labels(l_labelIdx);
-        r_label = r_eye_classifier.categoryClassifier.Labels(r_labelIdx);
+        [l_label, l_score] = predict(l_eye_classifier.categoryClassifier, l_im_lin);
+        [r_label, r_score] = predict(r_eye_classifier.categoryClassifier, r_im_lin);
         
         % draw frames
         im_h.CData = frame;
@@ -131,8 +133,8 @@ for m_id=1:length(movies_path)
         l_rect_h.Position = [medlx(i)*scale_factor-ab/2 medly(i)*scale_factor-cd/2 ab cd];
         r_rect_h.Position = [medrx(i)*scale_factor-ab/2 medry(i)*scale_factor-cd/2 ab cd];
         
-        if (strcmp(l_label, 'close') && abs(l_score(1)) < 0.1) && ...
-           (strcmp(r_label, 'close') && abs(r_score(1)) < 0.1),
+        if (strcmp(l_label, 'close') && l_score(1) > 0.9) && ...
+           (strcmp(r_label, 'close') && r_score(1) > 0.9),
        
             if is_open,
                 blinks = blinks + 1;

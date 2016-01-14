@@ -15,15 +15,17 @@ r_eye_dataset = '../eyes_dataset_small/right';
 % categoryClassifier object was created and it could be use to predict the
 % category of a new image.
 
-if exist('bof_svm_classifier.mat', 'file'),
-    load bof_svm_classifier.mat;
-else
-    trainingset_percentage = .3;
-    verboseflag = true;
-    l_eye_classifier = train_svm_with_bof(l_eye_dataset, trainingset_percentage, verboseflag);
-    r_eye_classifier = train_svm_with_bof(r_eye_dataset, trainingset_percentage, verboseflag);
-    save('bof_svm_classifier.mat', '*_eye_classifier');
-end
+% if exist('bof_svm_classifier.mat', 'file'),
+%     load bof_svm_classifier.mat;
+% else
+%     trainingset_percentage = .3;
+%     verboseflag = true;
+%     l_eye_classifier = train_svm_with_bof(l_eye_dataset, trainingset_percentage, verboseflag);
+%     r_eye_classifier = train_svm_with_bof(r_eye_dataset, trainingset_percentage, verboseflag);
+%     save('bof_svm_classifier.mat', '*_eye_classifier');
+% end
+
+load classifierMod.mat;
 
 %%
 figure();
@@ -33,7 +35,8 @@ hold on;
 axis image;
 axis off;
 set(gca, 'YDir', 'reverse');
-l_t = text(0,0, '', 'BackgroundColor', 'g');
+l_t = text(1,-30, 'test', 'BackgroundColor', 'g');
+l_p = text(1,-10, '123456789', 'BackgroundColor', 'g');
 
 subplot(122);
 r_im_h = imagesc;
@@ -41,27 +44,31 @@ hold on;
 axis image;
 axis off;
 set(gca, 'YDir', 'reverse');
-r_t = text(0,0, '', 'BackgroundColor', 'g');
+r_t = text(1,-30, 'test', 'BackgroundColor', 'g');
+r_p = text(1,-10, '123456789', 'BackgroundColor', 'g');
 
 %%
-l_im_root_dir = 'eyes_dataset/28/left/';
+l_im_root_dir = '../eyes_dataset/28/left/';
 l_im_dir = dir([ l_im_root_dir '*.jpg']);
 l_im_dir = sort_nat({l_im_dir.name});
 
-r_im_root_dir = 'eyes_dataset/28/right/';
+r_im_root_dir = '../eyes_dataset/28/right/';
 r_im_dir = dir([ r_im_root_dir '*.jpg']);
 r_im_dir = sort_nat({r_im_dir.name});
 
-for i=75%:length(l_im_dir)
+for i=1:length(l_im_dir)
     l_im = imread([l_im_root_dir char(l_im_dir(i))]);
     r_im = imread([r_im_root_dir char(r_im_dir(i))]);
     
     % images classification
     [l_labelIdx, l_score] = predict(l_eye_classifier.categoryClassifier, l_im);
-    [r_labelIdx, r_scores] = predict(r_eye_classifier.categoryClassifier, r_im);    
+    [r_labelIdx, r_score] = predict(r_eye_classifier.categoryClassifier, r_im);    
 
     l_im_h.CData = l_im;
     r_im_h.CData = r_im;
+    
+    l_p.String = num2str(l_score);
+    r_p.String = num2str(r_score);
     
     if strcmp(l_eye_classifier.categoryClassifier.Labels(l_labelIdx), 'open'),
         l_t.String = 'Open';
@@ -75,5 +82,5 @@ for i=75%:length(l_im_dir)
         r_t.String = 'Close';
     end
       
-    pause(1/61);
+    pause(1/6.1);
 end

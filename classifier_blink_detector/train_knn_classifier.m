@@ -23,9 +23,9 @@ for i=1:trainingSets(1).Count
 end
 
 % load validation sets
-for i=1:trainingSets(1).Count
-	im_close = double(rgb2gray(read(trainingSets(1), i)));
-	im_open = double(rgb2gray(read(trainingSets(2), i)));
+for i=1:validationSets(1).Count
+	im_close = double(rgb2gray(read(validationSets(1), i)));
+	im_open = double(rgb2gray(read(validationSets(2), i)));
 	validator(i,:) = reshape(im_close, 1, []);
 	validator(i+trainingSets(1).Count,:) = reshape(im_open, 1, []);
 	validator_labels{i} = 'close';
@@ -41,14 +41,14 @@ crossval_knn = crossval(knn_class, 'KFold', 10);
 % test on training set
 [label,score] = predict(crossval_knn.Trained{1},predictors);
 
-% compute confusion matrix on trainging set
-tr_set_confMatrix = confusionmat(validator_labels,response)
+% compute confusion matrix on training set
+tr_set_confMatrix = confusionmat(response,label);
 
 % test on validation set
 [label,score] = predict(crossval_knn.Trained{1},validator);
 
 % compute confusion matrix on validation set
-val_set_confMatrix = confusionmat(validator_labels,label)
+val_set_confMatrix = confusionmat(validator_labels,label);
 
 classifier.categoryClassifier = crossval_knn.Trained{1};
 classifier.trainingset_confmatrix = tr_set_confMatrix;
